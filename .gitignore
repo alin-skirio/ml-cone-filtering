@@ -1,3 +1,4 @@
+/.venv/
 test.json
 train.json
 validation.json

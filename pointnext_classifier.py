@@ -40,7 +40,7 @@ def build_pointnext_s_classifier(device: torch.device) -> torch.nn.Module:
         NAME="BaseCls",
         encoder_args=EasyDict(
             NAME="PointNextEncoder",
-            in_channels=1,
+            in_channels=3,
             width=32,
             blocks=[1, 1, 1, 1, 1, 1],
             strides=[1, 2, 2, 2, 2, 1],
@@ -71,9 +71,9 @@ def build_pointnext_s_classifier(device: torch.device) -> torch.nn.Module:
 def smoke_test(device: torch.device, batch_size: int = 32) -> None:
     data_directory = Path(__file__).resolve().parent
     train_loader, validation_loader, test_loader = create_dataloaders(
-        data_directory / "normalized_centered_train.json",
-        data_directory / "normalized_centered_validation.json",
-        data_directory / "normalized_centered_test.json",
+        data_directory / "train.json",
+        data_directory / "validation.json",
+        data_directory / "test.json",
         batch_size=batch_size,
     )
     validate_loaders(

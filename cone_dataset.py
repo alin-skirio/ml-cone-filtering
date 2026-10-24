@@ -50,17 +50,19 @@ class ConeDataset(Dataset[dict[str, torch.Tensor]]):
             if not isinstance(cluster, dict):
                 raise ValueError(f"Cluster {index} in {self.json_path} is not an object")
 
-            raw_points = cluster.get("points_xyzi")
+            raw_points = cluster.get("points_xyz", cluster.get("points_xyzi"))
             if not isinstance(raw_points, list):
-                raise ValueError(f"Cluster {index} in {self.json_path} has no points_xyzi array")
+                raise ValueError(
+                    f"Cluster {index} in {self.json_path} has no points_xyz or points_xyzi array"
+                )
             if not raw_points:
                 raise ValueError(f"Cluster {index} in {self.json_path} has no points")
 
             points = np.asarray(raw_points, dtype=np.float32)
-            if points.ndim != 2 or points.shape[1] != 4:
+            if points.ndim != 2 or points.shape[1] not in (3, 4):
                 raise ValueError(
-                    f"Cluster {index} in {self.json_path} must have points_xyzi "
-                    f"with shape (N, 4); got {points.shape}"
+                    f"Cluster {index} in {self.json_path} must have points_xyz or "
+                    f"points_xyzi with shape (N, 3) or (N, 4); got {points.shape}"
                 )
             if not np.isfinite(points).all():
                 raise ValueError(f"Cluster {index} in {self.json_path} has non-finite points")
@@ -109,14 +111,11 @@ class ConeDataset(Dataset[dict[str, torch.Tensor]]):
             points = np.concatenate((points, points[duplicates]), axis=0)
 
         pos = torch.from_numpy(np.ascontiguousarray(points[:, :3], dtype=np.float32))
-        intensity = torch.from_numpy(
-            np.ascontiguousarray(points[:, 3], dtype=np.float32)
-        ).unsqueeze(0)
         label = torch.tensor(self.labels[index], dtype=torch.long)
 
         return {
             "pos": pos,
-            "x": intensity,
+            "x": pos.transpose(0, 1).contiguous(),
             "y": label,
             "original_num_points": torch.tensor(point_count, dtype=torch.long),
         }
@@ -176,7 +175,7 @@ def validate_loaders(
         point_count = loader.dataset.points_per_cluster
         expected_shapes = {
             "pos": (batch_size, point_count, 3),
-            "x": (batch_size, 1, point_count),
+            "x": (batch_size, 3, point_count),
             "y": (batch_size,),
         }
         for key, expected_shape in expected_shapes.items():

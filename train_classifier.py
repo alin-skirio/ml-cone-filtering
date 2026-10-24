@@ -128,7 +128,7 @@ def main() -> None:
     parser.add_argument(
         "--checkpoint",
         type=Path,
-        default=data_directory / "pointnext_s_best.pth",
+        default=data_directory / "pointnext_s_xyz.pth",
     )
     args = parser.parse_args()
 
